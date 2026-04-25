@@ -1,24 +1,19 @@
-import { useState } from "react";
-import { predictSkin } from "./services/api";
+import Navbar from './components/organisms/Navbar';
+import HeroSection from './components/organisms/HeroSection';
+import FeaturesSection from './components/organisms/FeaturesSection';
+import HowItWorksSection from './components/organisms/HowItWorksSection';
+import CTASection from './components/organisms/CTASection';
+import Footer from './components/organisms/Footer';
 
 function App() {
-  const [result, setResult] = useState("");
-
-  const handleClick = async () => {
-    const data = {
-      skinType: "oily",
-      concern: "acne"
-    };
-
-    const res = await predictSkin(data);
-    setResult(res.result);
-  };
-
   return (
-    <div>
-      <h1>LumiSkin</h1>
-      <button onClick={handleClick}>Cek Kulit</button>
-      <p>Hasil: {result}</p>
+    <div className="min-h-screen bg-neutral-50">
+      <Navbar />
+      <HeroSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <CTASection />
+      <Footer />
     </div>
   );
 }
