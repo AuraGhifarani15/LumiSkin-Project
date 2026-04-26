@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Button from '../atoms/Button';
 
 const Navbar = () => {
@@ -10,9 +11,9 @@ const Navbar = () => {
   return (
     <nav className="w-full bg-white border-b border-neutral-200 px-6 py-4">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <a href="#home" className="text-xl font-medium text-neutral-900 no-underline">
+        <Link to="/" className="text-xl font-medium text-neutral-900 no-underline">
           Lumi<span className="text-primary">Skin</span>
-        </a>
+        </Link>
 
         <ul className="hidden md:flex items-center gap-8 list-none m-0 p-0">
           {navLinks.map((link) => (
@@ -24,7 +25,9 @@ const Navbar = () => {
           ))}
         </ul>
 
-        <Button size="sm">Daftar Gratis</Button>
+        <Link to="/register">
+          <Button size="sm">Daftar Gratis</Button>
+        </Link>
       </div>
     </nav>
   );
