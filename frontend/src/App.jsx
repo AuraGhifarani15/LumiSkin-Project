@@ -1,21 +1,12 @@
-import Navbar from './components/organisms/Navbar';
-import HeroSection from './components/organisms/HeroSection';
-import FeaturesSection from './components/organisms/FeaturesSection';
-import HowItWorksSection from './components/organisms/HowItWorksSection';
-import CTASection from './components/organisms/CTASection';
-import Footer from './components/organisms/Footer';
+import { Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 
-function App() {
+const App = () => {
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <Navbar />
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CTASection />
-      <Footer />
-    </div>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+    </Routes>
   );
-}
+};
 
 export default App;
