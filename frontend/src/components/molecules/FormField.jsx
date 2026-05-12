@@ -1,4 +1,4 @@
-import Input from '../atoms/input';
+import Input from '../atoms/Input';
 import Label from '../atoms/Label';
 
 const FormField = ({ label, name, type = 'text', placeholder, value, onChange }) => {

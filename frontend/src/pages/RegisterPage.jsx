@@ -1,24 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '../services/supabase';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 import Button from '../components/atoms/Button';
 import FormField from '../components/molecules/FormField';
 
-const RegisterPage = () => {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-  });
+function RegisterPage() {
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleOAuth = async (provider) => {
-    await supabase.auth.signInWithOAuth({ provider });
   };
 
   const handleSubmit = async (e) => {
@@ -26,27 +21,24 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: { full_name: form.name },
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      alert('Registrasi berhasil! Cek email kamu untuk verifikasi.');
+    try {
+      const { data } = await api.post('/auth/register', form);
+      login(data.data.user, data.data.token);
+      navigate('/analyze');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal mendaftar. Coba lagi.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
+  const handleGoogle = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/google`;
   };
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-8 flex flex-col gap-6">
-        {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-medium text-neutral-900">Buat Akun</h1>
           <p className="text-sm text-neutral-400">
@@ -63,7 +55,6 @@ const RegisterPage = () => {
           <FormField label="Nama Lengkap" name="name" placeholder="Masukkan nama lengkap" value={form.name} onChange={handleChange} />
           <FormField label="Email" name="email" type="email" placeholder="nama@email.com" value={form.email} onChange={handleChange} />
           <FormField label="Password" name="password" type="password" placeholder="Minimal 6 karakter" value={form.password} onChange={handleChange} />
-
           <Button type="submit" size="lg" disabled={loading}>
             {loading ? 'Memproses...' : 'Daftar Sekarang'}
           </Button>
@@ -76,24 +67,14 @@ const RegisterPage = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
-            onClick={() => handleOAuth('google')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors duration-200"
-          >
+          <button onClick={handleGoogle} className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors duration-200">
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
             Daftar dengan Google
-          </button>
-          <button
-            onClick={() => handleOAuth('github')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors duration-200"
-          >
-            <img src="https://github.com/favicon.ico" alt="GitHub" className="w-4 h-4" />
-            Daftar dengan GitHub
           </button>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default RegisterPage;
