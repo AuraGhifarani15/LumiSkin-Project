@@ -36,11 +36,32 @@ app.use(
     autoLogging: {
       ignore: (req) => req.url === "/",
     },
-    customSuccessMessage: (req, res) => {
-      return `${req.method} ${req.url} ${res.statusCode}`;
+    customSuccessMessage: (req, res, responseTime) => {
+      const ip = req.ip || req.socket?.remoteAddress || "Unknown IP";
+      const url = req.originalUrl || req.url;
+      let payload = "";
+      if (req.body && Object.keys(req.body).length > 0 && url !== "/") {
+        const safeBody = { ...req.body };
+        delete safeBody.password; 
+        delete safeBody.image; 
+        
+        // Khusus untuk /chat, tampilkan pesan yang paling akhir saja
+        if (url === "/chat" && Array.isArray(safeBody.messages) && safeBody.messages.length > 0) {
+          const lastMsg = safeBody.messages[safeBody.messages.length - 1];
+          safeBody.last_message = lastMsg.content;
+          delete safeBody.messages; // Sembunyikan riwayat lengkap agar rapi
+        }
+
+        let bodyStr = JSON.stringify(safeBody);
+        if (bodyStr.length > 150) bodyStr = bodyStr.substring(0, 150) + "...";
+        payload = ` | Data: ${bodyStr}`;
+      }
+      return `[${ip}] ${req.method} ${url} ${res.statusCode} - ${responseTime}ms${payload}`;
     },
     customErrorMessage: (req, res, err) => {
-      return `${req.method} ${req.url} ${res.statusCode} - ${err.message}`;
+      const ip = req.ip || req.socket?.remoteAddress || "Unknown IP";
+      const url = req.originalUrl || req.url;
+      return `[${ip}] ${req.method} ${url} ${res.statusCode} - ${err.message}`;
     },
   }),
 );
