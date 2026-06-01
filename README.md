@@ -25,3 +25,7 @@ npm run dev
 - backend: API & logic
 - ai-model: model AI
 - data-science: analisis data
+
+## Dashboard Deployment
+https://lumiskin-project.streamlit.app## Dashboard Deployment
+
