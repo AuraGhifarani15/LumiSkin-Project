@@ -27,5 +27,5 @@ npm run dev
 - data-science: analisis data
 
 ## Dashboard Deployment
-https://lumiskin-project.streamlit.app## Dashboard Deployment
+https://lumiskin-project.streamlit.app
 
