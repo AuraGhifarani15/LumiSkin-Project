@@ -2,236 +2,403 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# =========================
-# PAGE CONFIG
-# =========================
+# ====================================
+# CONFIG
+# ====================================
 
 st.set_page_config(
     page_title="LumiSkin Dashboard",
     layout="wide"
 )
 
-# =========================
-# SIDEBAR
-# =========================
-
-st.sidebar.title("✨ LumiSkin Dashboard")
-st.sidebar.write("Data Science Analysis")
-st.sidebar.markdown("---")
-st.sidebar.write("Dataset: Skincare Products")
-
-# =========================
+# ====================================
 # LOAD DATA
-# =========================
+# ====================================
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("datasets/skincare_dataset/cosmetics.csv")
 
-df = load_data()
+    cosmetics = pd.read_csv(
+        "datasets/processed/processed_cosmetics.csv"
+    )
 
-# =========================
-# TITLE
-# =========================
+    indo = pd.read_csv(
+        "datasets/processed/processed_indonesian_skincare.csv"
+    )
 
-st.title("✨ LumiSkin Dashboard")
-st.write("Interactive Dashboard for Skincare Product Analysis")
+    return cosmetics, indo
 
-# =========================
-# KPI CARDS
-# =========================
 
-col1, col2, col3, col4 = st.columns(4)
+cosmetics, indo = load_data()
 
-with col1:
-    st.metric("Total Products", len(df))
+# ====================================
+# SIDEBAR
+# ====================================
 
-with col2:
-    st.metric("Total Brands", df["Brand"].nunique())
+st.sidebar.title("✨ LumiSkin")
 
-with col3:
-    st.metric("Average Price", round(df["Price"].mean(), 2))
-
-with col4:
-    st.metric("Average Rating", round(df["Rank"].mean(), 2))
-
-st.markdown("---")
-
-# =========================
-# 1. PRODUCT CATEGORY
-# =========================
-
-st.subheader("1. Distribution of Skincare Product Categories")
-
-label_counts = df["Label"].value_counts()
-
-fig1, ax1 = plt.subplots(figsize=(10, 5))
-label_counts.plot(kind="bar", ax=ax1)
-
-ax1.set_title("Distribution of Skincare Product Categories")
-ax1.set_xlabel("Product Category")
-ax1.set_ylabel("Number of Products")
-
-st.pyplot(fig1)
-
-st.info(
-    "Moisturizer is the most dominant product category with 298 products, while Sun Protect has the least with 170 products."
-)
-
-# =========================
-# 2. SKIN TYPE
-# =========================
-
-st.subheader("2. Distribution of Products by Skin Type")
-
-skin_counts = {
-    "Combination": df["Combination"].sum(),
-    "Dry": df["Dry"].sum(),
-    "Normal": df["Normal"].sum(),
-    "Oily": df["Oily"].sum(),
-    "Sensitive": df["Sensitive"].sum()
-}
-
-fig2, ax2 = plt.subplots(figsize=(10, 5))
-
-ax2.bar(
-    skin_counts.keys(),
-    skin_counts.values()
-)
-
-ax2.set_title("Number of Products by Skin Type")
-ax2.set_xlabel("Skin Type")
-ax2.set_ylabel("Number of Products")
-
-st.pyplot(fig2)
-
-st.info(
-    "Products for Combination skin are the most numerous (966 products), while products for Sensitive skin are the least (756 products)."
-)
-
-# =========================
-# 3. PRICE ANALYSIS
-# =========================
-
-st.subheader("3. Product Price Characteristics")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Average Price", round(df["Price"].mean(), 2))
-
-with col2:
-    st.metric("Minimum Price", df["Price"].min())
-
-with col3:
-    st.metric("Maximum Price", df["Price"].max())
-
-st.info(
-    "The average price of skincare products in the dataset is 55.58, with prices ranging from 3 to 370."
-)
-
-# =========================
-# 4. PRICE BY CATEGORY
-# =========================
-
-st.subheader("4. Average Price per Product Category")
-
-avg_price_per_category = (
-    df.groupby("Label")["Price"]
-    .mean()
-    .sort_values(ascending=False)
-)
-
-fig3, ax3 = plt.subplots(figsize=(10, 5))
-
-avg_price_per_category.plot(
-    kind="bar",
-    ax=ax3
-)
-
-ax3.set_title("Average Price by Product Category")
-ax3.set_xlabel("Category")
-ax3.set_ylabel("Average Price")
-
-st.pyplot(fig3)
-
-st.info(
-    "Treatment has the highest average price, while Cleanser has the lowest."
-)
-
-# =========================
-# 5. RATING DISTRIBUTION
-# =========================
-
-st.subheader("5. Distribution of Product Ratings")
-
-fig4, ax4 = plt.subplots(figsize=(10, 5))
-
-ax4.hist(df["Rank"], bins=20)
-
-ax4.set_title("Distribution of Product Ratings")
-ax4.set_xlabel("Rating")
-ax4.set_ylabel("Number of Products")
-
-st.pyplot(fig4)
-
-st.info(
-    "The average product rating is 4.15 out of 5, indicating that most products receive positive reviews."
-)
-
-# =========================
-# UNRATED PRODUCTS
-# =========================
-
-st.subheader("Products with Rating 0")
-
-st.dataframe(
-    df[df["Rank"] == 0][["Brand", "Name", "Rank"]].head(10)
-)
-
-# =========================
-# DATA DICTIONARY
-# =========================
-
-st.markdown("---")
-
-st.subheader("Data Dictionary")
-
-dictionary_df = pd.DataFrame({
-    "Column": [
-        "Label", "Brand", "Name", "Price", "Rank",
-        "Ingredients", "Combination", "Dry",
-        "Normal", "Oily", "Sensitive"
-    ],
-    "Description": [
-        "Skincare product category",
-        "Product brand name",
-        "Product name",
-        "Product price",
-        "Product rating",
-        "List of ingredients",
-        "Suitable for combination skin",
-        "Suitable for dry skin",
-        "Suitable for normal skin",
-        "Suitable for oily skin",
-        "Suitable for sensitive skin"
+menu = st.sidebar.radio(
+    "Pilih Halaman",
+    [
+        "🏠 Home",
+        "🌍 Cosmetics",
+        "🇮🇩 Indonesia",
+        "🧴 Acne Dataset",
+        "📊 Evaluation"
     ]
-})
+)
 
-st.dataframe(dictionary_df)
+# ====================================
+# HOME
+# ====================================
 
-# =========================
-# CONCLUSION
-# =========================
+if menu == "🏠 Home":
+
+    st.title("✨ LumiSkin Dashboard")
+
+    st.caption(
+        """
+Dashboard hasil analisis Data Science
+untuk sistem rekomendasi skincare.
+"""
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric(
+        "Produk Global",
+        len(cosmetics)
+    )
+
+    c2.metric(
+        "Brand Indonesia",
+        indo["Brand"].nunique()
+    )
+
+    c3.metric(
+        "Rata-rata Rating",
+        round(
+            indo["Rating"].mean(),
+            2
+        )
+    )
+
+    c4.metric(
+        "Kategori Produk",
+        cosmetics["Label"].nunique()
+    )
+
+    st.markdown("---")
+
+    st.info(
+"""
+Dashboard ini mengintegrasikan hasil EDA,
+preprocessing, evaluasi dataset,
+dan analisis image dataset.
+"""
+    )
+
+# ====================================
+# COSMETICS
+# ====================================
+
+elif menu == "🌍 Cosmetics":
+
+    st.title("🌍 Global Cosmetics Analysis")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader(
+            "Distribusi Kategori"
+        )
+
+        fig, ax = plt.subplots()
+
+        cosmetics[
+            "Label"
+        ].value_counts().plot(
+            kind="bar",
+            ax=ax
+        )
+
+        st.pyplot(fig)
+
+        st.info(
+"""
+Kategori produk menunjukkan
+distribusi yang tidak merata.
+"""
+        )
+
+    with col2:
+
+        st.subheader(
+            "Distribusi Harga"
+        )
+
+        fig, ax = plt.subplots()
+
+        ax.hist(
+            cosmetics[
+                "Price"
+            ],
+            bins=25
+        )
+
+        st.pyplot(fig)
+
+        st.info(
+"""
+Dataset memiliki rentang harga
+produk yang cukup beragam.
+"""
+        )
+
+    st.subheader(
+        "Top 10 Brand"
+    )
+
+    st.dataframe(
+
+        cosmetics[
+            "Brand"
+        ]
+
+        .value_counts()
+
+        .head(10)
+    )
+
+# ====================================
+# INDONESIA
+# ====================================
+
+elif menu == "🇮🇩 Indonesia":
+
+    st.title(
+        "🇮🇩 Indonesian Skincare Analysis"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader(
+            "Top Product Type"
+        )
+
+        fig, ax = plt.subplots()
+
+        indo[
+            "Type"
+        ].value_counts().head(
+            10
+        ).plot(
+            kind="bar",
+            ax=ax
+        )
+
+        st.pyplot(fig)
+
+    with col2:
+
+        st.subheader(
+            "Distribusi Rating"
+        )
+
+        fig, ax = plt.subplots()
+
+        ax.hist(
+            indo[
+                "Rating"
+            ],
+            bins=20
+        )
+
+        st.pyplot(fig)
+
+    st.info(
+"""
+Mayoritas produk memperoleh
+rating positif dari pengguna.
+"""
+    )
+
+    if "recommendation_score" in indo.columns:
+
+        st.subheader(
+            "Top Recommendation"
+        )
+
+        st.dataframe(
+
+            indo
+
+            .sort_values(
+                "recommendation_score",
+                ascending=False
+            )
+
+            [[
+                "Brand",
+                "Name",
+                "Rating",
+                "recommendation_score"
+            ]]
+
+            .head(10)
+        )
+
+# ====================================
+# ACNE
+# ====================================
+
+elif menu == "🧴 Acne Dataset":
+
+    st.title(
+        "🧴 Acne Image Dataset"
+    )
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        "Train",
+        1850
+    )
+
+    c2.metric(
+        "Validation",
+        632
+    )
+
+    c3.metric(
+        "Test",
+        596
+    )
+
+    acne = pd.DataFrame({
+
+        "Class":[
+            "Cyst",
+            "Papules",
+            "Pustules"
+        ],
+
+        "Train":[
+            645,
+            621,
+            584
+        ],
+
+        "Valid":[
+            206,
+            209,
+            217
+        ],
+
+        "Test":[
+            189,
+            202,
+            205
+        ]
+
+    })
+
+    st.dataframe(
+        acne
+    )
+
+    fig, ax = plt.subplots()
+
+    acne.set_index(
+        "Class"
+    ).plot(
+        kind="bar",
+        ax=ax
+    )
+
+    st.pyplot(
+        fig
+    )
+
+    st.success(
+"""
+Dataset telah melalui:
+
+✅ Filtering
+
+✅ Cleaning
+
+✅ Standardisasi
+
+✅ Siap untuk tahap berikutnya
+"""
+    )
+
+# ====================================
+# EVALUATION
+# ====================================
+
+elif menu == "📊 Evaluation":
+
+    st.title(
+        "📊 Dataset Evaluation"
+    )
+
+    evaluation = pd.DataFrame({
+
+        "Pemeriksaan":[
+
+            "Missing Value",
+
+            "Duplicate",
+
+            "Outlier",
+
+            "Feature Engineering",
+
+            "Processed Dataset"
+
+        ],
+
+        "Status":[
+
+            "Completed",
+
+            "Completed",
+
+            "Reviewed",
+
+            "Completed",
+
+            "Ready"
+
+        ]
+
+    })
+
+    st.table(
+        evaluation
+    )
+
+    st.success(
+"""
+Dataset siap digunakan
+untuk dashboard dan
+pengembangan tahap berikutnya.
+"""
+    )
+
+# ====================================
+# FOOTER
+# ====================================
 
 st.markdown("---")
 
-st.subheader("Conclusion")
-
-st.success("""
-1. Moisturizer is the most dominant skincare category.
-2. Combination skin products dominate the dataset.
-3. Treatment products have the highest average price.
-4. Most products have high ratings.
-5. The dataset is suitable for supporting skincare recommendation systems.
-""")
+st.caption(
+"""
+LumiSkin Dashboard • Data Science Team • 2026
+"""
+)
