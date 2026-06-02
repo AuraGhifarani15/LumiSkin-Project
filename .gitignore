@@ -150,3 +150,9 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# DEEO Learning Model
+LumiSkin_EfficientNetB0_AcneModel.keras
+*.keras
+*.h5
+*.pkl
