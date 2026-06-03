@@ -12,6 +12,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const analyzeRoutes = require("./routes/analyze");
 const chatRoutes = require("./routes/chat");
+const predictSkinRoutes = require("./routes/predictSkin");
 const prisma = require("./config/prisma");
 
 const app = express();
@@ -27,7 +28,19 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 // Security headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+      },
+    },
+  })
+);
 
 // Request logging
 app.use(
@@ -42,11 +55,15 @@ app.use(
       let payload = "";
       if (req.body && Object.keys(req.body).length > 0 && url !== "/") {
         const safeBody = { ...req.body };
-        delete safeBody.password; 
-        delete safeBody.image; 
-        
+        delete safeBody.password;
+        delete safeBody.image;
+
         // Khusus untuk /chat, tampilkan pesan yang paling akhir saja
-        if (url === "/chat" && Array.isArray(safeBody.messages) && safeBody.messages.length > 0) {
+        if (
+          url === "/chat" &&
+          Array.isArray(safeBody.messages) &&
+          safeBody.messages.length > 0
+        ) {
           const lastMsg = safeBody.messages[safeBody.messages.length - 1];
           safeBody.last_message = lastMsg.content;
           delete safeBody.messages; // Sembunyikan riwayat lengkap agar rapi
@@ -75,8 +92,8 @@ app.use(
 );
 
 // Body parser
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 // Rate limiting
 const loginLimiter = rateLimit({
@@ -143,7 +160,7 @@ app.use(
       "lumiskin_session_secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === "production" },
+    cookie: { secure: process.env.COOKIE_SECURE === "true" },
   }),
 );
 
@@ -173,6 +190,8 @@ app.use(
 );
 
 app.use("/chat", chatLimiter, chatRoutes);
+
+app.use("/api/predict-skin", predictSkinRoutes);
 
 // 404
 app.use((req, res) => {

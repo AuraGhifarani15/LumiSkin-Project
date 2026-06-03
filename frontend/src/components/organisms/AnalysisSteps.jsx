@@ -6,7 +6,7 @@ import ConcernTag from '../atoms/ConcernTag';
 import ConfirmationRow from '../atoms/ConfirmationRow';
 import { SKIN_TYPES, CONCERNS, SectionCard } from './AnalysisSteps.utils';
 
-const AnalysisSteps = ({ step, setStep, image, dragOver, setDragOver, imageError, loadImage, removeImage, skinType, setSkinType, concerns, toggleConcern, prompt, setPrompt, loading, apiError, handleAnalyze, MAX_FILE_MB, ACCEPTED }) => {
+const AnalysisSteps = ({ step, setStep, image, dragOver, setDragOver, imageError, loadImage, removeImage, skinType, setSkinType, concerns, toggleConcern, prompt, setPrompt, loading, apiError, handleAnalyze, MAX_FILE_MB, ACCEPTED, queueMessage }) => {
   const fileRef = useRef();
 
   return (
@@ -146,7 +146,7 @@ const AnalysisSteps = ({ step, setStep, image, dragOver, setDragOver, imageError
       {loading && (
         <div className="bg-white rounded-2xl border p-8 flex flex-col items-center gap-3 shadow-sm border-primary/20">
           <Loader2 size={32} className="animate-spin text-primary" />
-          <p className="text-sm font-medium text-neutral-900">Model AI sedang memproses gambar kulitmu…</p>
+          <p className="text-sm font-medium text-neutral-900">{queueMessage || 'Model AI sedang memproses gambar kulitmu…'}</p>
         </div>
       )}
     </div>

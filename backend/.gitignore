@@ -1,5 +1,21 @@
 node_modules
-# Keep environment variables out of version control
-.env
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Prisma generated
 /src/generated/prisma
+
+# Upload files (user-uploaded images)
+uploads/*
+!uploads/.gitkeep
+
+# Log files
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

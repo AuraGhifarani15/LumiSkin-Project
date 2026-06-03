@@ -10,7 +10,7 @@ const SEVERITY_MAP = {
 };
 
 const ResultCard = ({ result, onReset, showFull, setShowFull }) => {
-  const data = result?.result ?? result;
+  const data = result?.data?.result ?? result?.result ?? result;
   const conditions = data?.conditions ?? [];
   const recommendations = data?.recommendations ?? [];
   const summary = data?.summary ?? '';

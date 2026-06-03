@@ -1,14 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { analyzeSkin } from '../services/api';
+import { analyzeSkin, getAnalysisStatus, getAnalysisQuota } from '../services/api';
 import Navbar from '../components/organisms/Navbar';
 import SectionLabel from '../components/atoms/SectionLabel';
 import AnalysisSteps from '../components/organisms/AnalysisSteps';
 import ResultCard from '../components/molecules/ResultCard';
 
-const MAX_FILE_MB = 10;
+const MAX_FILE_MB = 5;
+const MIN_FILE_KB = 200;
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
 const fileToBase64 = (file) =>
@@ -20,7 +21,7 @@ const fileToBase64 = (file) =>
   });
 
 const AnalysisPage = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, token } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -35,11 +36,24 @@ const AnalysisPage = () => {
   const [skinType, setSkinType] = useState('');
   const [concerns, setConcerns] = useState([]);
   const [prompt, setPrompt] = useState('');
+  const [queueMessage, setQueueMessage] = useState('');
+  const [quota, setQuota] = useState(null); // { used, limit, remaining }
+
+  /* ── Ambil info kuota saat halaman dimuat ── */
+  useEffect(() => {
+    if (token) {
+      getAnalysisQuota(token).then(setQuota).catch(() => {});
+    }
+  }, [token]);
 
   const loadImage = useCallback(async (file) => {
     setImageError('');
     if (!ACCEPTED.includes(file.type)) {
       setImageError('Format file harus JPG, PNG, atau WebP.');
+      return;
+    }
+    if (file.size < MIN_FILE_KB * 1024) {
+      setImageError(`Ukuran file minimal ${MIN_FILE_KB}KB agar hasil analisis akurat.`);
       return;
     }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
@@ -67,19 +81,62 @@ const AnalysisPage = () => {
     setLoading(true);
     setApiError('');
     setResult(null);
+    setQueueMessage('Mengirim foto ke antrean server...');
+
     try {
-      const data = await analyzeSkin({
+      // 1. Kirim request analisis (masuk antrean)
+      const initData = await analyzeSkin({
         image: image.base64,
         skinType: skinType || undefined,
         concerns,
         additionalNotes: prompt.trim(),
-      });
-      setResult(data);
-      setStep(3);
+      }, token);
+
+      const jobId = initData.data?.jobId;
+      if (!jobId) {
+        throw new Error('Gagal mendapatkan nomor antrean dari server.');
+      }
+
+      // 2. Mulai Polling untuk cek status pekerjaan asinkron
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusData = await getAnalysisStatus(jobId, token);
+          const { status, result: analysisResult, queuePosition, message } = statusData.data;
+
+          if (status === 'completed') {
+            clearInterval(pollInterval);
+            setResult(analysisResult);
+            setStep(3);
+            setLoading(false);
+            setQueueMessage('');
+          } else if (status === 'failed') {
+            clearInterval(pollInterval);
+            setApiError(statusData.message || 'Analisis gagal diproses.');
+            setLoading(false);
+            setQueueMessage('');
+          } else {
+            // Update pesan antrean (misal: "Menunggu antrean posisi ke-1...")
+            setQueueMessage(message || 'Sedang memproses...');
+          }
+        } catch (pollErr) {
+          clearInterval(pollInterval);
+          setApiError(pollErr.response?.data?.message ?? 'Gagal memantau antrean.');
+          setLoading(false);
+          setQueueMessage('');
+        }
+      }, 2000); // Poll setiap 2 detik
+
     } catch (err) {
-      setApiError(err.response?.data?.message ?? 'Analisis gagal. Hubungi backend developer.');
-    } finally {
+      // Tangkap error kuota habis (HTTP 429)
+      if (err.response?.status === 429) {
+        const quotaData = err.response.data?.quota;
+        if (quotaData) setQuota(quotaData);
+        setApiError(err.response.data?.message || 'Kuota analisis harian kamu sudah habis.');
+      } else {
+        setApiError(err.response?.data?.message ?? 'Analisis gagal. Hubungi backend developer.');
+      }
       setLoading(false);
+      setQueueMessage('');
     }
   };
 
@@ -102,7 +159,14 @@ const AnalysisPage = () => {
         <div className="flex flex-col">
           <SectionLabel>Analisis Kulit</SectionLabel>
           <h1 className="text-2xl font-medium text-neutral-900">Kenali Kondisi Kulitmu</h1>
-          <p className="text-sm text-neutral-400 mt-1">Upload foto wajah dan lengkapi detail untuk hasil yang lebih akurat.</p>
+          <p className="text-sm text-neutral-400 mt-1">
+            Upload foto wajah dan lengkapi detail untuk hasil yang lebih akurat.
+            {quota ? (
+              <span className={`ml-2 font-semibold ${quota.remaining <= 1 ? 'text-red-500' : 'text-primary'}`}>
+                (Sisa kuota: {quota.remaining}/{quota.limit} hari ini)
+              </span>
+            ) : null}
+          </p>
         </div>
 
         {/* Guest Guard Lock Banner */}
@@ -145,6 +209,7 @@ const AnalysisPage = () => {
             handleAnalyze={handleAnalyze}
             MAX_FILE_MB={MAX_FILE_MB}
             ACCEPTED={ACCEPTED}
+            queueMessage={queueMessage}
           />
         ) : (
           <ResultCard result={result} onReset={handleReset} showFull={showFullResult} setShowFull={setShowFullResult} />

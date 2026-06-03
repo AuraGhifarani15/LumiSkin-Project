@@ -15,10 +15,24 @@ const Navbar = () => {
   const isChat = location.pathname === '/chat';
 
   const navLinks = [
-    { label: 'Beranda', href: '/' },
-    { label: 'Fitur', href: '/features' },
-    { label: 'Cara Kerja', href: '/cara-kerja' },
+    { label: 'Beranda', sectionId: 'home' },
+    { label: 'Fitur', sectionId: 'features' },
+    { label: 'Cara Kerja', sectionId: 'how-it-works' },
   ];
+
+  const scrollToSection = (sectionId) => {
+    if (location.pathname !== '/') {
+      // Jika sedang di halaman lain, navigasi ke landing page dulu lalu scroll
+      navigate('/');
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -36,9 +50,12 @@ const Navbar = () => {
         <ul className="hidden md:flex items-center gap-8 list-none m-0 p-0">
           {navLinks.map((link) => (
             <li key={link.label}>
-              <Link to={link.href} className="text-sm text-neutral-400 hover:text-neutral-900 transition-colors duration-200 no-underline">
+              <button
+                onClick={() => scrollToSection(link.sectionId)}
+                className="text-sm text-neutral-400 hover:text-neutral-900 transition-colors duration-200 bg-transparent border-none cursor-pointer p-0"
+              >
                 {link.label}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
