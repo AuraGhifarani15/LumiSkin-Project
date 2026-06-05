@@ -29,12 +29,29 @@ analysisQueue.process(1, async (job) => {
   const startTime = Date.now();
 
   try {
+    let base64Image = image;
+
+    // Jika tidak ada base64Image tapi ada imagePath, baca file dari disk dan konversi ke Base64
+    if (!base64Image && imagePath && fs.existsSync(imagePath)) {
+      const fileBuffer = await fs.promises.readFile(imagePath);
+      const ext = path.extname(imagePath).toLowerCase().replace(".", "");
+      let mimeType = `image/${ext}`;
+      if (ext === "jpg" || ext === "jpeg") {
+        mimeType = "image/jpeg";
+      } else if (ext === "png") {
+        mimeType = "image/png";
+      } else if (ext === "webp") {
+        mimeType = "image/webp";
+      }
+      base64Image = `data:${mimeType};base64,${fileBuffer.toString("base64")}`;
+    }
+
     // Siapkan payload untuk dikirim ke FastAPI
     const mlPayload = {
       skinType,
       concerns,
       additionalNotes,
-      ...(image ? { image } : { imagePath }),
+      image: base64Image,
     };
 
     // Panggil FastAPI model AI

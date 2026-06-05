@@ -16,6 +16,7 @@ const predictSkinRoutes = require("./routes/predictSkin");
 const prisma = require("./config/prisma");
 
 const app = express();
+app.set("trust proxy", 1); // Trust Cloudflare proxy
 const PORT = process.env.PORT || 5000;
 
 // Graceful shutdown
@@ -131,7 +132,7 @@ const forgotLimiter = rateLimit({
 
 const analyzeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: 60,
   message: {
     success: false,
     message: "Terlalu banyak permintaan analisis. Coba lagi dalam 1 jam.",
@@ -142,7 +143,7 @@ const analyzeLimiter = rateLimit({
 
 const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 100,
   message: {
     success: false,
     message: "Terlalu banyak pesan. Tunggu sebentar.",
